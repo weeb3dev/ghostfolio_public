@@ -33,6 +33,7 @@ import { AssetModule } from './asset/asset.module';
 import { AuthDeviceModule } from './auth-device/auth-device.module';
 import { AuthModule } from './auth/auth.module';
 import { CacheModule } from './cache/cache.module';
+import { AgentEndpointModule } from './endpoints/agent/agent-endpoint.module';
 import { AiModule } from './endpoints/ai/ai.module';
 import { ApiKeysModule } from './endpoints/api-keys/api-keys.module';
 import { AssetsModule } from './endpoints/assets/assets.module';
@@ -64,6 +65,7 @@ import { UserModule } from './user/user.module';
     AdminModule,
     AccessModule,
     AccountModule,
+    AgentEndpointModule,
     AgentModule,
     AiModule,
     ApiKeysModule,

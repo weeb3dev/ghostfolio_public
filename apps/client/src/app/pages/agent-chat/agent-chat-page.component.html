@@ -1,0 +1,134 @@
+<div class="chat-layout">
+  <aside class="sidebar" [class.collapsed]="!isSidebarOpen">
+    @if (isSidebarOpen) {
+      <div class="sidebar-header">
+        <button mat-button class="new-chat-btn" (click)="onNewConversation()">
+          <ion-icon name="add-outline" />
+          <span>New Chat</span>
+        </button>
+        <button mat-icon-button class="toggle-btn" (click)="toggleSidebar()">
+          <ion-icon name="chevron-back-outline" />
+        </button>
+      </div>
+      <div class="sidebar-conversations">
+        @for (conv of conversations; track conv.conversationId) {
+          <button
+            class="conversation-item"
+            mat-button
+            [class.active]="conv.conversationId === conversationId"
+            (click)="onSelectConversation(conv.conversationId)"
+          >
+            <ion-icon name="chatbubble-outline" />
+            <span class="conversation-preview">{{ conv.preview || 'New conversation' }}</span>
+          </button>
+        }
+        @if (conversations.length === 0) {
+          <div class="no-conversations">
+            <span>No conversations yet</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <button mat-icon-button class="toggle-btn expand" (click)="toggleSidebar()">
+        <ion-icon name="chevron-forward-outline" />
+      </button>
+    }
+  </aside>
+
+  <main class="chat-main">
+    <div #messageContainer class="messages-container">
+      @if (messages.length === 0 && !isLoading) {
+        <div class="empty-state">
+          <h2>AgentForge</h2>
+          <p>Ask me anything about your portfolio, holdings, performance, or risk analysis.</p>
+          <div class="suggested-prompts">
+            <button
+              mat-stroked-button
+              (click)="messageText = 'What is the total value of my portfolio?'; onSendMessage()"
+            >
+              Portfolio value
+            </button>
+            <button
+              mat-stroked-button
+              (click)="messageText = 'What are my top 5 holdings?'; onSendMessage()"
+            >
+              Top holdings
+            </button>
+            <button
+              mat-stroked-button
+              (click)="messageText = 'Analyze the risk in my portfolio'; onSendMessage()"
+            >
+              Risk analysis
+            </button>
+          </div>
+        </div>
+      }
+
+      @for (msg of messages; track $index) {
+        <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
+          <div class="message-bubble">
+            <div class="message-content">{{ msg.content }}</div>
+            @if (msg.role === 'assistant') {
+              <div class="message-meta">
+                @if (msg.toolsUsed?.length) {
+                  <div class="tool-badges">
+                    @for (tool of msg.toolsUsed; track tool) {
+                      <span class="tool-badge">{{ formatToolName(tool) }}</span>
+                    }
+                  </div>
+                }
+                @if (msg.confidence) {
+                  <span class="confidence-badge" [class]="getConfidenceClass(msg.confidence)">
+                    {{ msg.confidence }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (isLoading) {
+        <div class="message assistant">
+          <div class="message-bubble">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea
+          #messageInput
+          class="message-input"
+          placeholder="Ask about your portfolio..."
+          rows="1"
+          [(ngModel)]="messageText"
+          [disabled]="isLoading"
+          (keydown)="onKeyDown($event)"
+        ></textarea>
+        <button
+          class="send-button"
+          mat-icon-button
+          color="primary"
+          [disabled]="!messageText.trim() || isLoading"
+          (click)="onSendMessage()"
+        >
+          @if (isLoading) {
+            <mat-spinner [diameter]="20" />
+          } @else {
+            <ion-icon name="send-outline" />
+          }
+        </button>
+      </div>
+      <div class="disclaimer">
+        AI-generated analysis. Not financial advice. Always verify data independently.
+      </div>
+    </div>
+  </main>
+</div>

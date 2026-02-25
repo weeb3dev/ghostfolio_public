@@ -25,6 +25,9 @@ import {
   AccountsResponse,
   ActivitiesResponse,
   ActivityResponse,
+  AgentChatMessageItem,
+  AgentChatResponse,
+  AgentConversationItem,
   AiPromptResponse,
   ApiKeyResponse,
   AssetProfileIdentifier,
@@ -668,6 +671,31 @@ export class DataService {
     return this.http.get<AiPromptResponse>(`/api/v1/ai/prompt/${mode}`, {
       params
     });
+  }
+
+  public postAgentChat({
+    message,
+    conversationId
+  }: {
+    message: string;
+    conversationId?: string;
+  }) {
+    return this.http.post<AgentChatResponse>('/api/v1/agent/chat', {
+      message,
+      conversationId
+    });
+  }
+
+  public fetchAgentConversations() {
+    return this.http.get<AgentConversationItem[]>(
+      '/api/v1/agent/conversations'
+    );
+  }
+
+  public fetchAgentConversation(conversationId: string) {
+    return this.http.get<AgentChatMessageItem[]>(
+      `/api/v1/agent/conversations/${conversationId}`
+    );
   }
 
   public fetchPublicPortfolio(aAccessId: string) {

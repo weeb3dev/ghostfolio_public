@@ -116,6 +116,23 @@ model AuthDevice {
   @@index([userId])
 }
 
+model ChatMessage {
+  id             String   @id @default(uuid())
+  conversationId String
+  content        String
+  confidence     String?
+  createdAt      DateTime @default(now())
+  role           String
+  toolCalls      Json?
+  tokensUsed     Int?
+  user           User     @relation(fields: [userId], onDelete: Cascade, references: [id])
+  userId         String
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model MarketData {
   createdAt   DateTime        @default(now())
   dataSource  DataSource
@@ -268,6 +285,7 @@ model User {
   apiKeys       ApiKey[]
   authChallenge String?
   authDevices   AuthDevice[]
+  chatMessages  ChatMessage[]
   createdAt     DateTime        @default(now())
   id            String          @id @default(uuid())
   provider      Provider        @default(ANONYMOUS)
