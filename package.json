@@ -23,6 +23,7 @@
     "database:migrate": "prisma migrate deploy",
     "database:push": "prisma db push",
     "database:seed": "prisma db seed",
+    "database:seed:congress": "npx tsx prisma/seed-congressional-portfolios.ts",
     "database:setup": "npm run database:push && npm run database:seed",
     "database:validate-schema": "prisma validate",
     "dep-graph": "nx dep-graph",
@@ -204,6 +205,7 @@
     "ts-jest": "29.4.0",
     "ts-node": "10.9.2",
     "tslib": "2.8.1",
+    "tsx": "^4.21.0",
     "typescript": "5.9.2",
     "webpack-bundle-analyzer": "4.10.2"
   },
