@@ -1,0 +1,61 @@
+---
+description: Global project context and code style for the AgentForge MVP
+globs: "**/*.ts, **/*.tsx, **/*.html, **/*.scss"
+alwaysApply: true
+---
+
+# AgentForge MVP — Project Context
+
+This is a fork of Ghostfolio (open-source wealth management software) with an
+AI financial agent module added. The agent analyzes congressional STOCK Act
+financial disclosures seeded as Ghostfolio portfolios.
+
+- **Monorepo**: Nx workspace — Angular frontend (`apps/client`), NestJS API
+  (`apps/api`), shared libraries (`libs/*`)
+- **Agent code**: `libs/agent/src/lib/` (NestJS module)
+- **Language**: TypeScript everywhere, strict mode enabled
+- **ORM**: Prisma (`prisma/schema.prisma`)
+- **Infrastructure**: PostgreSQL + Redis
+- **AI stack**: LangGraph.js + LangChain.js, Claude Sonnet 4 (Anthropic API),
+  Langfuse for observability (tracing, evals, cost tracking)
+- **Test data**: Congressional STOCK Act financial disclosures seeded as
+  Ghostfolio portfolios
+
+## Code Style
+
+- Always use TypeScript strict mode. No `any` types.
+- Use Zod for all runtime validation (tool inputs, API request bodies).
+- Use NestJS dependency injection — never instantiate services with `new`.
+- Follow Ghostfolio's existing patterns: read similar files in the codebase
+  before writing new code.
+- New agent files → `libs/agent/src/lib/`
+- New API controllers → `apps/api/src/app/agent/`
+- Use barrel exports (`index.ts`) for clean imports.
+- Error handling: always `try/catch` in tools and services, return structured
+  error objects, never throw unhandled exceptions.
+
+## Key File References
+
+Read these before writing related code:
+
+| Domain             | Path                                                      |
+| ------------------ | --------------------------------------------------------- |
+| Portfolio data     | `apps/api/src/app/portfolio/portfolio.service.ts`         |
+| Order/activity     | `apps/api/src/app/order/order.service.ts`                 |
+| Market data        | `apps/api/src/app/data-provider/data-provider.service.ts` |
+| Auth pattern       | Search for `@AuthUser` decorator in the codebase          |
+| Existing AI svc    | `apps/api/src/app/ai/ai.service.ts`                       |
+| Prisma schema      | `prisma/schema.prisma`                                    |
+| Import endpoint    | `apps/api/src/app/import/import.service.ts`               |
+
+## When in Doubt
+
+1. Read the existing Ghostfolio source code before generating new code.
+2. Match the patterns you see in the existing codebase.
+3. Prefer extending existing services over creating new abstractions.
+4. Ask clarifying questions rather than guessing.
+
+## Environment Variables
+
+- Make sure to gitignore the .env .env.example and .env.dev files.
+- Don't commit the .env .env.example and .env.dev files to the repository.

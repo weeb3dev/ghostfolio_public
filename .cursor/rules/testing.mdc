@@ -1,0 +1,19 @@
+---
+description: Testing conventions for agent eval tests and unit tests
+globs: "**/*.spec.ts, **/*.test.ts, **/__tests__/**"
+---
+
+# Testing Rules
+
+- Use Jest (Ghostfolio's existing test framework).
+- Eval tests → `libs/agent/src/lib/__tests__/`
+- Every test must verify:
+  1. Correct tool was called
+  2. Response format is valid
+  3. Verification layer passed
+  4. Latency < 15 s
+- Use `jest.setTimeout(30000)` for tests that invoke the LLM.
+- Mock external services (`DataProviderService`) for unit tests; use real
+  services for integration/eval tests.
+- Follow existing test patterns in the Ghostfolio codebase (check nearby
+  `*.spec.ts` files for conventions).

@@ -1,0 +1,38 @@
+---
+description: Rules for the AI financial agent module — tools, safety, and response format
+globs: "libs/agent/**/*.ts, apps/api/src/app/agent/**/*.ts"
+---
+
+# Agent Module Rules
+
+## Tool Implementation
+
+- Every tool MUST use Ghostfolio's existing services (`PortfolioService`,
+  `OrderService`, `DataProviderService`) — never call external APIs directly.
+- All tool responses must be structured JSON with explicit field names.
+- Always `try/catch` in every tool — return a structured error object on failure.
+- Validate all tool inputs with Zod schemas.
+
+## Safety & Compliance
+
+- The agent must NEVER fabricate numerical data — all numbers must originate
+  from tool call results.
+- The agent must NEVER provide specific buy/sell investment advice.
+- The agent must NEVER suggest copying any politician's trades.
+- The agent must include a financial disclaimer when discussing performance data.
+- The agent must include confidence scoring (`Low` / `Medium` / `High`) on every
+  response.
+- Congressional portfolio data is PUBLIC record — safe to discuss and analyze,
+  but always framed as educational/analytical only.
+
+## File Organization
+
+- Agent services, tools, graph definitions → `libs/agent/src/lib/`
+- API controllers / endpoints → `apps/api/src/app/agent/`
+- Barrel export everything through `libs/agent/src/index.ts`
+
+## Observability
+
+- Wrap all LLM calls with Langfuse tracing.
+- Include `traceId` in agent responses for debugging.
+- Log tool invocations with input/output shapes for eval pipelines.

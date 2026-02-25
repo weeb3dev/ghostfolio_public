@@ -1,0 +1,16 @@
+---
+description: Prisma schema and migration conventions
+globs: "prisma/**"
+---
+
+# Prisma Rules
+
+- Schema lives at `prisma/schema.prisma`.
+- Follow Ghostfolio's existing model naming conventions (PascalCase models,
+  camelCase fields).
+- New agent-related models should be prefixed or grouped clearly
+  (e.g., `AgentConversation`, `AgentTrace`).
+- Always run `npx prisma generate` after schema changes.
+- Use Prisma migrations (`npx prisma migrate dev`) — never modify the database
+  directly.
+- Read the existing schema before adding new models to avoid duplication.
