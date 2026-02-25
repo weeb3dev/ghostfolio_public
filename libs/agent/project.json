@@ -1,0 +1,23 @@
+{
+  "name": "agent",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/agent/src",
+  "projectType": "library",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "options": {
+        "lintFilePatterns": ["libs/agent/**/*.ts"],
+        "eslintConfig": "libs/agent/eslint.config.cjs"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/agent"],
+      "options": {
+        "jestConfig": "libs/agent/jest.config.ts"
+      }
+    }
+  },
+  "tags": []
+}

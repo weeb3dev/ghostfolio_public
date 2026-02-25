@@ -16,7 +16,7 @@ todos:
     status: completed
   - id: commit-phase2
     content: Commit .gitignore fix (API keys are in .env which is already gitignored)
-    status: in_progress
+    status: completed
 isProject: false
 ---
 

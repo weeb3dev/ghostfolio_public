@@ -33,7 +33,7 @@ This guide walks you through building the AgentForge MVP from zero to deployed. 
 
 ---
 
-## Phase 1: Environment Setup
+## Phase 1: Environment Setup [COMPLETED]
 
 **Goal:** Get Ghostfolio running locally so you have a working baseline before touching any AI code.
 **Estimated time:** 1–2 hours.
@@ -128,7 +128,7 @@ Open http://localhost:4200 in your browser. You should see the Ghostfolio login 
 
 ---
 
-## Phase 2: Get Your API Keys
+## Phase 2: Get Your API Keys [COMPLETED]
 
 **Goal:** Obtain API keys for the services your agent needs.
 **Estimated time:** 15–30 minutes.
@@ -160,7 +160,7 @@ LANGFUSE_BASEURL=https://cloud.langfuse.com
 
 ---
 
-## Phase 3: Build the Agent Library
+## Phase 3: Build the Agent Library [IN PROGRESS]
 
 **Goal:** Create a new Nx library that contains all agent logic, tools, and the verification layer. This is the core of your MVP.
 **Estimated time:** 3–4 hours with AI assistance.
