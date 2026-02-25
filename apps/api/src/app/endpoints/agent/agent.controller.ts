@@ -88,7 +88,8 @@ export class AgentController {
         response: result.response,
         conversationId: resolvedConversationId,
         toolsUsed: result.toolCalls,
-        confidence: result.confidence
+        confidence: result.confidence,
+        verified: result.verified
       };
     } catch (error) {
       this.logger.error(

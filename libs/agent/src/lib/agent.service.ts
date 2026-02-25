@@ -15,6 +15,17 @@ import {
   createRiskAssessmentTool,
   createTransactionAnalysisTool
 } from './tools';
+import {
+  DomainConstraintChecker,
+  HallucinationDetector
+} from './verification';
+import type { ToolCallResult, VerificationResult } from './verification';
+
+const DOMAIN_VIOLATION_FALLBACK =
+  'I can only provide factual portfolio analysis, not investment advice. Please rephrase your question to ask about specific portfolio data or metrics.';
+
+const HALLUCINATION_WARNING =
+  '\n\n⚠️ Note: Some figures in this response could not be verified against the source data. Please verify independently.';
 
 export interface AgentChatResponse {
   response: string;
@@ -22,6 +33,7 @@ export interface AgentChatResponse {
   tokensUsed: number;
   confidence: string;
   latencyMs: number;
+  verified: boolean;
 }
 
 @Injectable()
@@ -95,26 +107,81 @@ export class AgentService implements OnModuleInit {
       });
 
       const lastMessage = result.messages[result.messages.length - 1];
-      const responseText =
+      let responseText =
         typeof lastMessage.content === 'string'
           ? lastMessage.content
           : JSON.stringify(lastMessage.content);
 
-      const toolCalls = result.messages
-        .filter((m: BaseMessage) => m.getType() === 'tool')
-        .map((m: BaseMessage) => m.name ?? 'unknown');
+      const toolMessages = result.messages.filter(
+        (m: BaseMessage) => m.getType() === 'tool'
+      );
 
-      const confidenceMatch =
-        /\[Confidence:\s*(Low|Medium|High)\]/i.exec(responseText);
-      const confidence = confidenceMatch
-        ? confidenceMatch[1].toLowerCase()
-        : 'medium';
+      const toolCalls = toolMessages.map(
+        (m: BaseMessage) => m.name ?? 'unknown'
+      );
+
+      const toolResults: ToolCallResult[] = toolMessages.map(
+        (m: BaseMessage) => ({
+          toolName: m.name ?? 'unknown',
+          result:
+            typeof m.content === 'string'
+              ? m.content
+              : JSON.stringify(m.content)
+        })
+      );
+
+      // --- Verification layer ---
+      const hallucinationResult = HallucinationDetector.check(
+        responseText,
+        toolResults
+      );
+      const domainResult = DomainConstraintChecker.check(responseText);
+
+      let confidence: string;
+      let verified = true;
+
+      if (domainResult.violations.length > 0) {
+        this.logger.warn(
+          `Domain constraint violated — user=${userId} violations=[${domainResult.violations.join('; ')}]`
+        );
+        responseText = DOMAIN_VIOLATION_FALLBACK;
+        confidence = 'low';
+        verified = false;
+      } else if (!hallucinationResult.isValid) {
+        this.logger.warn(
+          `Hallucination detected — user=${userId} claims=[${hallucinationResult.unsupportedClaims.join('; ')}]`
+        );
+        responseText += HALLUCINATION_WARNING;
+        confidence = 'low';
+        verified = false;
+      } else {
+        const confidenceMatch =
+          /\[Confidence:\s*(Low|Medium|High)\]/i.exec(responseText);
+        confidence = confidenceMatch
+          ? confidenceMatch[1].toLowerCase()
+          : 'medium';
+      }
+
+      const verification: VerificationResult = {
+        hallucination: hallucinationResult,
+        domainConstraint: domainResult,
+        verified
+      };
 
       const latencyMs = Date.now() - startTime;
 
       trace?.update({
-        output: { response: responseText, toolCalls, confidence },
+        output: { response: responseText, toolCalls, confidence, verified },
         metadata: { latencyMs, toolCalls }
+      });
+
+      trace?.span({
+        name: 'verification',
+        input: {
+          responseLength: responseText.length,
+          toolResultCount: toolResults.length
+        },
+        output: verification
       });
 
       trace?.score({
@@ -122,8 +189,13 @@ export class AgentService implements OnModuleInit {
         value: latencyMs
       });
 
+      trace?.score({
+        name: 'verification_passed',
+        value: verified ? 1 : 0
+      });
+
       this.logger.log(
-        `Chat completed — user=${userId} tools=[${toolCalls.join(',')}] confidence=${confidence} latency=${latencyMs}ms`
+        `Chat completed — user=${userId} tools=[${toolCalls.join(',')}] confidence=${confidence} verified=${verified} latency=${latencyMs}ms`
       );
 
       return {
@@ -131,7 +203,8 @@ export class AgentService implements OnModuleInit {
         toolCalls,
         tokensUsed: 0,
         confidence,
-        latencyMs
+        latencyMs,
+        verified
       };
     } catch (error) {
       const latencyMs = Date.now() - startTime;

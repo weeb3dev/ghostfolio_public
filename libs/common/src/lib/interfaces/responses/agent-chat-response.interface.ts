@@ -3,6 +3,7 @@ export interface AgentChatResponse {
   conversationId: string;
   toolsUsed: string[];
   confidence: string;
+  verified: boolean;
 }
 
 export interface AgentChatMessageItem {
