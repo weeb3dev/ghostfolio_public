@@ -2,7 +2,7 @@ import { OrderService } from '@ghostfolio/api/app/order/order.service';
 import { PortfolioService } from '@ghostfolio/api/app/portfolio/portfolio.service';
 import { DataProviderService } from '@ghostfolio/api/services/data-provider/data-provider.service';
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { type StructuredToolInterface } from '@langchain/core/tools';
 import { HumanMessage, type BaseMessage } from '@langchain/core/messages';
 import { Langfuse } from 'langfuse';
@@ -27,6 +27,22 @@ const DOMAIN_VIOLATION_FALLBACK =
 const HALLUCINATION_WARNING =
   '\n\n⚠️ Note: Some figures in this response could not be verified against the source data. Please verify independently.';
 
+let langfuseSingleton: Langfuse | null = null;
+
+function getLangfuse(): Langfuse | null {
+  if (langfuseSingleton) return langfuseSingleton;
+  if (
+    process.env['LANGFUSE_PUBLIC_KEY'] &&
+    process.env['LANGFUSE_SECRET_KEY']
+  ) {
+    langfuseSingleton = new Langfuse({
+      publicKey: process.env['LANGFUSE_PUBLIC_KEY'],
+      secretKey: process.env['LANGFUSE_SECRET_KEY']
+    });
+  }
+  return langfuseSingleton;
+}
+
 export interface AgentChatResponse {
   response: string;
   toolCalls: string[];
@@ -37,10 +53,8 @@ export interface AgentChatResponse {
 }
 
 @Injectable()
-export class AgentService implements OnModuleInit {
+export class AgentService {
   private readonly logger = new Logger(AgentService.name);
-  private agentGraph: ReturnType<typeof createAgentGraph> | null = null;
-  private langfuse: Langfuse | null = null;
 
   public constructor(
     private readonly portfolioService: PortfolioService,
@@ -48,7 +62,7 @@ export class AgentService implements OnModuleInit {
     private readonly dataProviderService: DataProviderService
   ) {}
 
-  public onModuleInit() {
+  private buildGraph() {
     const tools: StructuredToolInterface[] = [
       createPortfolioSummaryTool(this.portfolioService),
       createTransactionAnalysisTool(this.orderService),
@@ -57,26 +71,11 @@ export class AgentService implements OnModuleInit {
       createRebalanceSuggestionTool(this.portfolioService)
     ];
 
-    this.agentGraph = createAgentGraph(tools);
-
-    if (
-      process.env['LANGFUSE_PUBLIC_KEY'] &&
-      process.env['LANGFUSE_SECRET_KEY']
-    ) {
-      this.langfuse = new Langfuse({
-        publicKey: process.env['LANGFUSE_PUBLIC_KEY'],
-        secretKey: process.env['LANGFUSE_SECRET_KEY']
-      });
-      this.logger.log('Langfuse observability initialized');
-    } else {
-      this.logger.warn(
-        'Langfuse keys not configured — observability disabled'
-      );
-    }
-
     this.logger.log(
-      `Agent initialized with ${tools.length} tools: ${tools.map((t) => t.name).join(', ')}`
+      `Building agent graph with ${tools.length} tools: ${tools.map((t) => t.name).join(', ')}`
     );
+
+    return createAgentGraph(tools);
   }
 
   public async chat(
@@ -84,12 +83,11 @@ export class AgentService implements OnModuleInit {
     message: string,
     history: BaseMessage[] = []
   ): Promise<AgentChatResponse> {
-    if (!this.agentGraph) {
-      throw new Error('Agent graph not initialized');
-    }
+    const agentGraph = this.buildGraph();
+    const langfuse = getLangfuse();
 
     const startTime = Date.now();
-    const trace = this.langfuse?.trace({
+    const trace = langfuse?.trace({
       name: 'agent-chat',
       userId,
       input: { message },
@@ -102,7 +100,7 @@ export class AgentService implements OnModuleInit {
         new HumanMessage(message)
       ];
 
-      const result = await this.agentGraph.invoke({
+      const result = await agentGraph.invoke({
         messages
       });
 
@@ -223,7 +221,7 @@ export class AgentService implements OnModuleInit {
 
       throw error;
     } finally {
-      await this.langfuse?.flushAsync();
+      await langfuse?.flushAsync();
     }
   }
 }
