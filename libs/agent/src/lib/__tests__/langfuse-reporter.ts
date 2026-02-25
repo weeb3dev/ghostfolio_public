@@ -15,15 +15,25 @@ export interface EvalResult {
 }
 
 /**
- * Lazy-initialized Langfuse reporter. Avoids importing langfuse at
- * module load time so tests can run even when the langfuse package
- * has compatibility issues with Jest's VM environment.
+ * Pushes eval results to a Langfuse dataset via the REST API.
+ * Uses fetch() directly to avoid the langfuse SDK's CJS/ESM
+ * incompatibility with Jest's VM context.
  */
 export class LangfuseEvalReporter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private langfuse: any = null;
+  private readonly baseUrl: string;
+  private readonly authHeader: string;
   private datasetCreated = false;
-  private initAttempted = false;
+  private pendingRequests: Promise<void>[] = [];
+
+  constructor() {
+    this.baseUrl = (
+      process.env['LANGFUSE_BASEURL'] || 'https://us.cloud.langfuse.com'
+    ).replace(/\/+$/, '');
+
+    const pub = process.env['LANGFUSE_PUBLIC_KEY'] ?? '';
+    const sec = process.env['LANGFUSE_SECRET_KEY'] ?? '';
+    this.authHeader = `Basic ${Buffer.from(`${pub}:${sec}`).toString('base64')}`;
+  }
 
   get enabled(): boolean {
     return (
@@ -32,35 +42,33 @@ export class LangfuseEvalReporter {
     );
   }
 
-  private async init(): Promise<void> {
-    if (this.initAttempted) return;
-    this.initAttempted = true;
-
-    if (!this.enabled) return;
-
-    // langfuse-core's CJS bundle calls import() synchronously during require(),
-    // which throws TypeError in Jest's VM context (no --experimental-vm-modules).
-    // Detect Jest and skip — Langfuse reporting works in non-Jest runners.
-    if (process.env['JEST_WORKER_ID'] !== undefined) return;
-
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Langfuse } = require('langfuse') as { Langfuse: new (opts: { publicKey: string; secretKey: string }) => Record<string, unknown> };
-      this.langfuse = new Langfuse({
-        publicKey: process.env['LANGFUSE_PUBLIC_KEY']!,
-        secretKey: process.env['LANGFUSE_SECRET_KEY']!
-      });
-    } catch {
-      this.langfuse = null;
+  private async fetchApi(
+    path: string,
+    body: Record<string, unknown>
+  ): Promise<Response> {
+    const url = `${this.baseUrl}/api/public${path}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: this.authHeader
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      console.warn(
+        `[LangfuseReporter] ${res.status} from ${path}: ${text.slice(0, 200)}`
+      );
     }
+    return res;
   }
 
   async ensureDataset(): Promise<void> {
-    await this.init();
-    if (!this.langfuse || this.datasetCreated) return;
+    if (!this.enabled || this.datasetCreated) return;
 
     try {
-      await this.langfuse.createDataset({
+      await this.fetchApi('/v2/datasets', {
         name: DATASET_NAME,
         description:
           'Eval results for the AgentForge AI financial agent tested against congressional portfolios',
@@ -73,12 +81,11 @@ export class LangfuseEvalReporter {
   }
 
   async report(result: EvalResult): Promise<void> {
-    await this.init();
-    if (!this.langfuse) return;
+    if (!this.enabled) return;
 
     await this.ensureDataset();
 
-    await this.langfuse.createDatasetItem({
+    const p = this.fetchApi('/dataset-items', {
       datasetName: DATASET_NAME,
       input: { query: result.input },
       expectedOutput: { criteria: result.expectedOutput },
@@ -89,14 +96,17 @@ export class LangfuseEvalReporter {
         latencyMs: result.latencyMs,
         tokensUsed: result.tokensUsed,
         toolsCalled: result.toolsCalled,
+        actualOutput: result.actualOutput,
         timestamp: new Date().toISOString()
       }
-    });
+    }).then(() => undefined);
+
+    this.pendingRequests.push(p);
+    await p;
   }
 
   async flush(): Promise<void> {
-    await this.init();
-    if (!this.langfuse) return;
-    await this.langfuse.flushAsync();
+    await Promise.allSettled(this.pendingRequests);
+    this.pendingRequests = [];
   }
 }
