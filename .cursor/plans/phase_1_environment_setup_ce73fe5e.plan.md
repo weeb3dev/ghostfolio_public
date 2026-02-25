@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: git-init
     content: Initialize git repo with initial commit as baseline for agent development
-    status: in_progress
+    status: completed
 isProject: false
 ---
 

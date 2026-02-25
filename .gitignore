@@ -27,6 +27,8 @@ npm-debug.log
 /.angular/cache
 .cursor/rules/nx-rules.mdc
 .env
+.env.dev
+.env.example
 .env.prod
 .github/instructions/nx.instructions.md
 .nx/cache
