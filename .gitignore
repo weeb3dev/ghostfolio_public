@@ -37,6 +37,7 @@ npm-debug.log
 /connect.lock
 /coverage
 /dist
+/test-results
 /libpeerconnection.log
 testem.log
 /typings

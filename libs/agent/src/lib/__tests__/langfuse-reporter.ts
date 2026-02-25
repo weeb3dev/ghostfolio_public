@@ -38,14 +38,19 @@ export class LangfuseEvalReporter {
 
     if (!this.enabled) return;
 
+    // langfuse-core's CJS bundle calls import() synchronously during require(),
+    // which throws TypeError in Jest's VM context (no --experimental-vm-modules).
+    // Detect Jest and skip — Langfuse reporting works in non-Jest runners.
+    if (process.env['JEST_WORKER_ID'] !== undefined) return;
+
     try {
-      const { Langfuse } = await import('langfuse');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { Langfuse } = require('langfuse') as { Langfuse: new (opts: { publicKey: string; secretKey: string }) => Record<string, unknown> };
       this.langfuse = new Langfuse({
         publicKey: process.env['LANGFUSE_PUBLIC_KEY']!,
         secretKey: process.env['LANGFUSE_SECRET_KEY']!
       });
     } catch {
-      // Langfuse import failed (e.g. VM compatibility) — disable silently
       this.langfuse = null;
     }
   }

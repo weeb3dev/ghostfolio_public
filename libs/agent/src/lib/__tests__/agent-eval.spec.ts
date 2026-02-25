@@ -185,10 +185,29 @@ const KNOWN_USER_IDS = new Set([
   WYDEN_USER_ID, GREENE_USER_ID, GOTTHEIMER_USER_ID
 ]);
 
+const USER_ID_ALIASES: Record<string, string> = {};
+function registerAliases(canonicalId: string, ...aliases: string[]) {
+  USER_ID_ALIASES[canonicalId] = canonicalId;
+  for (const alias of aliases) {
+    USER_ID_ALIASES[alias.toLowerCase()] = canonicalId;
+  }
+}
+registerAliases(PELOSI_USER_ID, 'pelosi', 'nancy pelosi', 'nancy-pelosi', 'test-pelosi');
+registerAliases(TUBERVILLE_USER_ID, 'tuberville', 'tommy tuberville', 'tommy-tuberville', 'test-tuberville');
+registerAliases(CRENSHAW_USER_ID, 'crenshaw', 'dan crenshaw', 'dan-crenshaw', 'test-crenshaw');
+registerAliases(WYDEN_USER_ID, 'wyden', 'ron wyden', 'ron-wyden', 'test-wyden');
+registerAliases(GREENE_USER_ID, 'greene', 'marjorie taylor greene', 'marjorie-taylor-greene', 'test-greene', 'mtg');
+registerAliases(GOTTHEIMER_USER_ID, 'gottheimer', 'josh gottheimer', 'josh-gottheimer', 'test-gottheimer');
+
+function resolveUserId(input: string): string {
+  return USER_ID_ALIASES[input.toLowerCase().trim()] ?? input;
+}
+
 function createMockPortfolioService() {
   return {
     getDetails: jest.fn().mockImplementation(({ userId }: { userId: string }) => {
-      const holdings = PORTFOLIO_DATA[userId];
+      const resolved = resolveUserId(userId);
+      const holdings = PORTFOLIO_DATA[resolved];
       if (!holdings) throw new Error(`User ${userId} not found`);
       const holdingsList = Object.values(holdings);
       const totalValue = holdingsList.reduce((s, h) => s + h.valueInBaseCurrency, 0);
@@ -199,7 +218,8 @@ function createMockPortfolioService() {
       };
     }),
     getPerformance: jest.fn().mockImplementation(({ userId }: { userId: string }) => {
-      const perf = PERFORMANCE_DATA[userId];
+      const resolved = resolveUserId(userId);
+      const perf = PERFORMANCE_DATA[resolved];
       if (!perf) throw new Error(`User ${userId} not found`);
       return { performance: perf };
     })
@@ -209,7 +229,8 @@ function createMockPortfolioService() {
 function createMockOrderService() {
   return {
     getOrders: jest.fn().mockImplementation(({ userId }: { userId: string }) => {
-      const orders = ORDERS_DATA[userId];
+      const resolved = resolveUserId(userId);
+      const orders = ORDERS_DATA[resolved];
       if (!orders) throw new Error(`User ${userId} not found`);
       return { activities: orders, count: orders.length };
     })
@@ -276,9 +297,6 @@ function createMockDataProviderService() {
 
 jest.setTimeout(60_000);
 
-const SKIP_REASON = 'ANTHROPIC_API_KEY not set — skipping eval tests';
-const hasApiKey = Boolean(process.env['ANTHROPIC_API_KEY']);
-
 let agentGraph: ReturnType<typeof createAgentGraph>;
 let reporter: LangfuseEvalReporter;
 let currentCategory: EvalCategory = 'happy_path';
@@ -293,7 +311,16 @@ async function runAgent(
   latencyMs: number;
 }> {
   const start = Date.now();
-  const messages: BaseMessage[] = [new HumanMessage(message)];
+  const userIdMap = [
+    `Pelosi=${PELOSI_USER_ID}`,
+    `Tuberville=${TUBERVILLE_USER_ID}`,
+    `Crenshaw=${CRENSHAW_USER_ID}`,
+    `Wyden=${WYDEN_USER_ID}`,
+    `Greene=${GREENE_USER_ID}`,
+    `Gottheimer=${GOTTHEIMER_USER_ID}`
+  ].join(', ');
+  const contextualMessage = `[Session context: The current portfolio userId is "${userId}". Available portfolio userIds: ${userIdMap}. Use the appropriate userId when calling any tool that requires a userId parameter.]\n\n${message}`;
+  const messages: BaseMessage[] = [new HumanMessage(contextualMessage)];
 
   const result = await agentGraph.invoke({ messages });
 
@@ -352,9 +379,7 @@ function reportAfterTest(
 // Test suite
 // ---------------------------------------------------------------------------
 
-const describeIfKey = hasApiKey ? describe : describe.skip;
-
-describeIfKey('Agent Eval Suite', () => {
+describe('Agent Eval Suite', () => {
   beforeAll(() => {
     const mockPortfolio = createMockPortfolioService();
     const mockOrders = createMockOrderService();
@@ -835,8 +860,3 @@ describeIfKey('Agent Eval Suite', () => {
   });
 });
 
-if (!hasApiKey) {
-  it(SKIP_REASON, () => {
-    console.warn(SKIP_REASON);
-  });
-}
