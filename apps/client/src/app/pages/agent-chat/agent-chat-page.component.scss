@@ -251,7 +251,7 @@
 
 .input-container {
   padding: 0.75rem 1rem;
-  border-top: 1px solid var(--palette-foreground-divider, rgba(0, 0, 0, 0.12));
+  border-top: 1px solid rgba(var(--palette-foreground-divider, 0, 0, 0), 0.2);
   background: var(--palette-background-card, #fff);
 }
 
@@ -262,9 +262,17 @@
   max-width: 780px;
   margin: 0 auto;
   background: var(--palette-background-background, #fafafa);
-  border: 1px solid var(--palette-foreground-divider, rgba(0, 0, 0, 0.12));
+  border: 1.5px solid rgba(var(--palette-foreground-divider, 0, 0, 0), 0.24);
   border-radius: 1.5rem;
   padding: 0.5rem 0.5rem 0.5rem 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus-within {
+    border-color: rgba(var(--palette-primary-500, 54, 207, 204), 0.6);
+    box-shadow: 0 0 0 3px rgba(var(--palette-primary-500, 54, 207, 204), 0.15),
+                0 2px 8px rgba(0, 0, 0, 0.15);
+  }
 }
 
 .message-input {
@@ -298,6 +306,145 @@
   font-size: 0.7rem;
   color: var(--palette-foreground-secondary-text, rgba(0, 0, 0, 0.42));
   margin-top: 0.5rem;
+}
+
+.message.assistant .markdown-body {
+  ::ng-deep {
+    markdown {
+      h1,
+      h2,
+      h3,
+      h4 {
+        margin: 0.75rem 0 0.25rem;
+        line-height: 1.3;
+        color: inherit;
+      }
+
+      h1 {
+        font-size: 1.15rem;
+        font-weight: 700;
+      }
+
+      h2 {
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      h3 {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      h4 {
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0.4rem 0;
+        line-height: 1.6;
+      }
+
+      > *:first-child {
+        margin-top: 0;
+      }
+
+      > *:last-child {
+        margin-bottom: 0;
+      }
+
+      strong {
+        font-weight: 600;
+        color: inherit;
+      }
+
+      em {
+        color: inherit;
+      }
+
+      a {
+        color: rgba(var(--palette-primary-500, 54, 207, 204), 1);
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+
+      ul,
+      ol {
+        margin: 0.4rem 0;
+        padding-left: 1.5rem;
+      }
+
+      li {
+        margin: 0.2rem 0;
+        line-height: 1.5;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+        font-size: 0.85rem;
+        display: block;
+        overflow-x: auto;
+      }
+
+      th,
+      td {
+        padding: 0.4rem 0.75rem;
+        border: 1px solid rgba(var(--palette-foreground-divider, 0, 0, 0), 0.2);
+        text-align: left;
+      }
+
+      th {
+        font-weight: 600;
+        background: rgba(var(--palette-foreground-divider, 0, 0, 0), 0.06);
+      }
+
+      tr:nth-child(even) {
+        background: rgba(var(--palette-foreground-divider, 0, 0, 0), 0.03);
+      }
+
+      code {
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+        font-size: 0.84rem;
+        padding: 0.15rem 0.35rem;
+        border-radius: 4px;
+        background: rgba(var(--palette-foreground-divider, 0, 0, 0), 0.08);
+      }
+
+      pre {
+        margin: 0.5rem 0;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        background: rgba(var(--palette-foreground-divider, 0, 0, 0), 0.08);
+
+        code {
+          display: block;
+          padding: 0.75rem 1rem;
+          background: transparent;
+          white-space: pre;
+          line-height: 1.5;
+        }
+      }
+
+      blockquote {
+        margin: 0.5rem 0;
+        padding: 0.25rem 0.75rem;
+        border-left: 3px solid rgba(var(--palette-primary-500, 54, 207, 204), 0.5);
+        color: var(--palette-foreground-secondary-text, rgba(0, 0, 0, 0.6));
+      }
+
+      hr {
+        border: none;
+        border-top: 1px solid rgba(var(--palette-foreground-divider, 0, 0, 0), 0.15);
+        margin: 0.75rem 0;
+      }
+    }
+  }
 }
 
 @media (max-width: 768px) {

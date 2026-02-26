@@ -22,6 +22,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { IonIcon } from '@ionic/angular/standalone';
+import { MarkdownModule } from 'ngx-markdown';
 import { addIcons } from 'ionicons';
 import {
   addOutline,
@@ -48,6 +49,7 @@ interface ChatMessage {
     CommonModule,
     FormsModule,
     IonIcon,
+    MarkdownModule,
     MatButtonModule,
     MatCardModule,
     MatProgressSpinnerModule,

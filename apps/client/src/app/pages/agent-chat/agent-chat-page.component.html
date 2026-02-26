@@ -73,7 +73,13 @@
       @for (msg of messages; track $index) {
         <div class="message" [class.user]="msg.role === 'user'" [class.assistant]="msg.role === 'assistant'">
           <div class="message-bubble">
-            <div class="message-content">{{ msg.content }}</div>
+            @if (msg.role === 'assistant') {
+              <div class="message-content markdown-body">
+                <markdown [data]="msg.content"></markdown>
+              </div>
+            } @else {
+              <div class="message-content">{{ msg.content }}</div>
+            }
             @if (msg.role === 'assistant') {
               <div class="message-meta">
                 @if (msg.toolsUsed?.length) {
