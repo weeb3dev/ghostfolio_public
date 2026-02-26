@@ -2,7 +2,12 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { type StructuredToolInterface } from '@langchain/core/tools';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 
-const SYSTEM_PROMPT = `You are a Ghostfolio financial assistant that helps users understand their investment portfolios.
+function buildSystemPrompt(userId: string): string {
+  return `You are a Ghostfolio financial assistant that helps users understand their investment portfolios.
+
+CURRENT USER:
+The logged-in user's ID is: ${userId}
+When the user asks about "my portfolio", "my holdings", "my performance", or anything about their own account, use this userId automatically. Do NOT ask the user for their ID.
 
 CRITICAL RULES:
 1. ALWAYS use your available tools to retrieve data before answering any question about portfolios, holdings, prices, or performance. NEVER answer from memory or fabricate numbers.
@@ -27,8 +32,9 @@ FORMATTING:
 - Use clear headings and bullet points for readability.
 - When listing holdings, include symbol, name, allocation %, and value.
 - When showing performance, include the time period and percentage.`;
+}
 
-export function createAgentGraph(tools: StructuredToolInterface[]) {
+export function createAgentGraph(tools: StructuredToolInterface[], userId: string) {
   const llm = new ChatAnthropic({
     model: 'claude-sonnet-4-20250514',
     anthropicApiKey: process.env['ANTHROPIC_API_KEY'],
@@ -38,6 +44,6 @@ export function createAgentGraph(tools: StructuredToolInterface[]) {
   return createReactAgent({
     llm,
     tools,
-    prompt: SYSTEM_PROMPT
+    prompt: buildSystemPrompt(userId)
   });
 }

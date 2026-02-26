@@ -62,7 +62,7 @@ export class AgentService {
     private readonly dataProviderService: DataProviderService
   ) {}
 
-  private buildGraph() {
+  private buildGraph(userId: string) {
     const tools: StructuredToolInterface[] = [
       createPortfolioSummaryTool(this.portfolioService),
       createTransactionAnalysisTool(this.orderService),
@@ -75,7 +75,7 @@ export class AgentService {
       `Building agent graph with ${tools.length} tools: ${tools.map((t) => t.name).join(', ')}`
     );
 
-    return createAgentGraph(tools);
+    return createAgentGraph(tools, userId);
   }
 
   public async chat(
@@ -83,7 +83,7 @@ export class AgentService {
     message: string,
     history: BaseMessage[] = []
   ): Promise<AgentChatResponse> {
-    const agentGraph = this.buildGraph();
+    const agentGraph = this.buildGraph(userId);
     const langfuse = getLangfuse();
 
     const startTime = Date.now();
