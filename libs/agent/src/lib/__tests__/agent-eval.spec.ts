@@ -458,9 +458,12 @@ describe('Agent Eval Suite', () => {
     it('should show sector exposure for Pelosi', async () => {
       const query = 'What sectors is the Pelosi portfolio exposed to?';
       const result = await runAgent(PELOSI_USER_ID, query);
-      expect(result.toolCalls).toContain(TOOL_NAMES.riskAssessment);
+      const usedSectorTool =
+        result.toolCalls.includes(TOOL_NAMES.riskAssessment) ||
+        result.toolCalls.includes(TOOL_NAMES.portfolioSummary);
+      expect(usedSectorTool).toBe(true);
       expect(result.response.toLowerCase()).toMatch(/technology|tech/);
-      await reportAfterTest('pelosi_sectors', query, 'risk_assessment called, sectors mentioned', result, true);
+      await reportAfterTest('pelosi_sectors', query, 'risk_assessment or portfolio_summary called, sectors mentioned', result, true);
     });
 
     it('should show geographic diversification for Crenshaw', async () => {

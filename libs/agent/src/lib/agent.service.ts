@@ -4,7 +4,11 @@ import { DataProviderService } from '@ghostfolio/api/services/data-provider/data
 
 import { Injectable, Logger } from '@nestjs/common';
 import { type StructuredToolInterface } from '@langchain/core/tools';
-import { HumanMessage, type BaseMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  isAIMessage,
+  type BaseMessage
+} from '@langchain/core/messages';
 import { Langfuse } from 'langfuse';
 
 import { createAgentGraph } from './agent.graph';
@@ -50,6 +54,30 @@ export interface AgentChatResponse {
   confidence: string;
   latencyMs: number;
   verified: boolean;
+}
+
+const AGENT_MODEL = 'claude-sonnet-4-20250514';
+
+interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
+function extractTokenUsage(messages: BaseMessage[]): TokenUsage {
+  let inputTokens = 0;
+  let outputTokens = 0;
+
+  for (const msg of messages) {
+    if (!isAIMessage(msg)) continue;
+    const usage = msg.usage_metadata;
+    if (usage) {
+      inputTokens += usage.input_tokens ?? 0;
+      outputTokens += usage.output_tokens ?? 0;
+    }
+  }
+
+  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
 }
 
 @Injectable()
@@ -166,11 +194,30 @@ export class AgentService {
         verified
       };
 
+      const tokenUsage = extractTokenUsage(result.messages);
       const latencyMs = Date.now() - startTime;
 
       trace?.update({
         output: { response: responseText, toolCalls, confidence, verified },
         metadata: { latencyMs, toolCalls }
+      });
+
+      trace?.generation({
+        name: 'llm',
+        model: AGENT_MODEL,
+        input: messages.map((m) => ({
+          role: m.getType(),
+          content:
+            typeof m.content === 'string'
+              ? m.content
+              : JSON.stringify(m.content)
+        })),
+        output: responseText,
+        usage: {
+          input: tokenUsage.inputTokens,
+          output: tokenUsage.outputTokens,
+          total: tokenUsage.totalTokens
+        }
       });
 
       trace?.span({
@@ -193,13 +240,13 @@ export class AgentService {
       });
 
       this.logger.log(
-        `Chat completed — user=${userId} tools=[${toolCalls.join(',')}] confidence=${confidence} verified=${verified} latency=${latencyMs}ms`
+        `Chat completed — user=${userId} tools=[${toolCalls.join(',')}] tokens=${tokenUsage.totalTokens} confidence=${confidence} verified=${verified} latency=${latencyMs}ms`
       );
 
       return {
         response: responseText,
         toolCalls,
-        tokensUsed: 0,
+        tokensUsed: tokenUsage.totalTokens,
         confidence,
         latencyMs,
         verified
