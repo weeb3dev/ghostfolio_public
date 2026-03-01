@@ -17,6 +17,8 @@ AgentForge is a fork of [Ghostfolio](https://github.com/ghostfolio/ghostfolio) (
 The agent uses a verification layer (hallucination detection + domain constraint checking) to ensure responses are grounded in tool data and never cross into financial advice.
 
 > **Bounty Submission:** See [BOUNTY.md](./BOUNTY.md) for the full writeup — customer niche, features built, data sources, and impact.
+>
+> **Build Guide:** Want to build this yourself? Follow the [step-by-step Build Guide](./.cursor/plans/buildguideV2.md) — a battle-tested, junior-developer-friendly walkthrough with exact commands, AI prompts for Cursor/Claude Code, and MCP tool recommendations.
 
 ## Architecture
 
@@ -79,7 +81,7 @@ Every agent response passes through two checks before reaching the user:
 ### Setup
 
 ```bash
-# Clone and install
+# Clone and install (requires Node >= 22.18.0)
 git clone <your-fork-url>
 cd ghostfolio
 npm install
@@ -88,18 +90,21 @@ npm install
 docker compose -f docker/docker-compose.dev.yml up -d
 
 # Configure environment
-cp .env.example .env
-# Edit .env — add DATABASE_URL, REDIS_HOST, ANTHROPIC_API_KEY
+cp .env.dev .env
+# Edit .env — fill in REDIS_PASSWORD, POSTGRES_PASSWORD, ACCESS_TOKEN_SALT,
+# JWT_SECRET_KEY, and ANTHROPIC_API_KEY
 
-# Run database migrations and seed
-npx prisma migrate deploy
-npx prisma db seed
+# Push schema and seed default data
+npm run database:setup
 
-# Start the dev server
-npm start
+# Start the dev servers (two terminals)
+npm run start:server   # Terminal 1 — NestJS API on port 3333
+npm run start:client   # Terminal 2 — Angular on port 4200
+
+# Open https://localhost:4200/en
 ```
 
-See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed development environment setup.
+See [DEVELOPMENT.md](./DEVELOPMENT.md) for detailed development environment setup, or follow the comprehensive [Build Guide](./.cursor/plans/buildguideV2.md) for the full end-to-end walkthrough.
 
 ## Testing
 
