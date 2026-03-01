@@ -16,6 +16,8 @@ AgentForge is a fork of [Ghostfolio](https://github.com/ghostfolio/ghostfolio) (
 
 The agent uses a verification layer (hallucination detection + domain constraint checking) to ensure responses are grounded in tool data and never cross into financial advice.
 
+> **Bounty Submission:** See [BOUNTY.md](./BOUNTY.md) for the full writeup — customer niche, features built, data sources, and impact.
+
 ## Architecture
 
 ```
