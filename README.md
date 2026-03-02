@@ -21,6 +21,8 @@ The agent uses a verification layer (hallucination detection + domain constraint
 > **Agent Architecture:** See the [Agent Architecture Document](./.cursor/plans/agentarchitecture.md) for framework rationale, tool design, verification strategy, eval results, and observability setup.
 >
 > **Build Guide:** Want to build this yourself? Follow the [step-by-step Build Guide](./.cursor/plans/buildguideV2.md) — a battle-tested, junior-developer-friendly walkthrough with exact commands, AI prompts for Cursor/Claude Code, and MCP tool recommendations.
+>
+> **AI Cost Analysis:** See the [AI Cost Analysis](./.cursor/plans/AIcostanalysis.md) for real Langfuse-sourced cost data, per-query breakdowns, production projections, and optimization strategies.
 
 ## Architecture
 
