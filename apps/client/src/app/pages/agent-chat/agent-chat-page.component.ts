@@ -60,6 +60,26 @@ interface ChatMessage {
   templateUrl: './agent-chat-page.component.html'
 })
 export class GfAgentChatPageComponent implements OnInit, OnDestroy {
+  private static readonly DEFAULT_MESSAGES: readonly string[] = [
+    'Analyzing your request...',
+    'Retrieving portfolio data...',
+    'Processing holdings information...',
+    'Running analysis...',
+    'Generating response...'
+  ];
+
+  private static readonly STOCK_ACT_MESSAGES: readonly string[] = [
+    'Loading congressional portfolio data...',
+    'Analyzing Pelosi portfolio...',
+    'Analyzing Tuberville portfolio...',
+    'Analyzing Crenshaw portfolio...',
+    'Analyzing Wyden portfolio...',
+    'Analyzing Greene portfolio...',
+    'Analyzing Gottheimer portfolio...',
+    'Comparing portfolio profiles...',
+    'Generating summary...'
+  ];
+
   @ViewChild('messageContainer') private messageContainer: ElementRef;
   @ViewChild('messageInput') private messageInput: ElementRef;
 
@@ -67,10 +87,14 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
   public conversationId: string | undefined;
   public isLoading = false;
   public isSidebarOpen = true;
+  public loadingStatus = '';
   public messageText = '';
   public messages: ChatMessage[] = [];
   public user: User;
 
+  private isStockActQuery = false;
+  private loadingMessageIndex = 0;
+  private loadingTimerId: ReturnType<typeof setInterval> | null = null;
   private unsubscribeSubject = new Subject<void>();
 
   public constructor(
@@ -101,6 +125,7 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
   }
 
   public ngOnDestroy() {
+    this.stopLoadingMessages();
     this.unsubscribeSubject.next();
     this.unsubscribeSubject.complete();
   }
@@ -152,6 +177,7 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
     this.messages.push({ role: 'user', content: text });
     this.messageText = '';
     this.isLoading = true;
+    this.startLoadingMessages(text);
     this.changeDetectorRef.markForCheck();
     this.scrollToBottom();
 
@@ -163,6 +189,7 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.unsubscribeSubject))
       .subscribe({
         next: (response) => {
+          this.stopLoadingMessages();
           this.conversationId = response.conversationId;
 
           this.messages.push({
@@ -178,6 +205,7 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
           this.loadConversations();
         },
         error: () => {
+          this.stopLoadingMessages();
           this.messages.push({
             role: 'assistant',
             content:
@@ -219,6 +247,54 @@ export class GfAgentChatPageComponent implements OnInit, OnDestroy {
     return name
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase());
+  }
+
+  private startLoadingMessages(query: string) {
+    this.stopLoadingMessages();
+
+    const stockActPrompt =
+      'List all available STOCK Act congressional portfolios and give me a brief summary of each.';
+    const lowerQuery = query.toLowerCase();
+
+    this.isStockActQuery =
+      query === stockActPrompt ||
+      (lowerQuery.includes('stock act') &&
+        lowerQuery.includes('congressional'));
+
+    const messages = this.isStockActQuery
+      ? GfAgentChatPageComponent.STOCK_ACT_MESSAGES
+      : GfAgentChatPageComponent.DEFAULT_MESSAGES;
+
+    this.loadingMessageIndex = 0;
+    this.loadingStatus = messages[0];
+
+    this.loadingTimerId = setInterval(() => {
+      this.loadingMessageIndex++;
+
+      if (this.isStockActQuery) {
+        this.loadingMessageIndex = Math.min(
+          this.loadingMessageIndex,
+          messages.length - 1
+        );
+      } else {
+        this.loadingMessageIndex =
+          this.loadingMessageIndex % messages.length;
+      }
+
+      this.loadingStatus = messages[this.loadingMessageIndex];
+      this.changeDetectorRef.markForCheck();
+    }, 3000);
+  }
+
+  private stopLoadingMessages() {
+    if (this.loadingTimerId !== null) {
+      clearInterval(this.loadingTimerId);
+      this.loadingTimerId = null;
+    }
+
+    this.loadingStatus = '';
+    this.loadingMessageIndex = 0;
+    this.isStockActQuery = false;
   }
 
   private loadConversations() {

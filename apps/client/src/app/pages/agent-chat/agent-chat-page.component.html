@@ -102,11 +102,14 @@
 
       @if (isLoading) {
         <div class="message assistant">
-          <div class="message-bubble">
-            <div class="typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+          <div class="message-bubble loading-status-bubble">
+            <div class="loading-status">
+              <span class="loading-status-text">{{ loadingStatus }}</span>
+              <span class="loading-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </span>
             </div>
           </div>
         </div>
