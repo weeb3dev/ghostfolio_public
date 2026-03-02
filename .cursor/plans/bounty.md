@@ -30,7 +30,7 @@ Five tools exposed to the LangGraph ReAct agent via Ghostfolio's API:
 
 ### API and Data Persistence
 
-**Chat endpoints** (authenticated via `@AuthUser`):
+**Chat endpoints** (authenticated via `@Inject(REQUEST)` with `RequestWithUser`):
 - `POST /api/v1/agent/chat` — Send a message; the agent processes the query, calls tools, runs verification, and stores both user and assistant messages
 - `GET /api/v1/agent/conversations` — List all conversations for the authenticated user
 - `GET /api/v1/agent/conversations/:conversationId` — Retrieve full message history for a specific conversation

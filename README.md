@@ -18,6 +18,8 @@ The agent uses a verification layer (hallucination detection + domain constraint
 
 > **Bounty Submission:** See [BOUNTY.md](./BOUNTY.md) for the full writeup — customer niche, features built, data sources, and impact.
 >
+> **Agent Architecture:** See the [Agent Architecture Document](./.cursor/plans/agentarchitecture.md) for framework rationale, tool design, verification strategy, eval results, and observability setup.
+>
 > **Build Guide:** Want to build this yourself? Follow the [step-by-step Build Guide](./.cursor/plans/buildguideV2.md) — a battle-tested, junior-developer-friendly walkthrough with exact commands, AI prompts for Cursor/Claude Code, and MCP tool recommendations.
 
 ## Architecture
